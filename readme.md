@@ -71,6 +71,19 @@ npm run format                       # biome fix
 `npm run playtest` must run from this directory against a subreddit you moderate. External fetch
 domains declared in `devvit.json` require Reddit admin approval before they resolve at runtime.
 
+## Contributing
+
+ReadZen for Reddit is open source (BSD-3-Clause) — forks, issues, and pull requests are welcome,
+and the app is intended to be maintainable by the community.
+
+To work on it: fork the repo, `npm install`, then `npm run playtest r/<your-test-sub>` against a
+subreddit you moderate — Devvit apps run **on Reddit**, not locally, so there is no localhost preview
+beyond the playtest install. Run `npm run test` (types + lint + unit + build) before opening a PR.
+
+A fork that you intend to install yourself needs its own Reddit app registration (`devvit new` /
+`devvit upload`) and its own approved fetch domains (external hosts declared in `devvit.json` require
+Reddit admin approval before they resolve at runtime).
+
 ## Legal
 
 Privacy Policy and Terms are published at
