@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ReadZen</title>
+    <link rel="modulepreload" href="reader.js">
+    <style>
+    @font-face {
+      font-family: 'Reddit Sans';
+      src: url('fonts/RedditSans-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Reddit Sans';
+      src: url('fonts/RedditSans-SemiBold.woff2') format('woff2');
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+    }
+    :root {
+      --rz-bg: #ffffff;
+      --rz-surface: #f6f8f9;
+      --rz-surface-hover: #eef1f3;
+      --rz-border: rgba(0, 0, 0, 0.2);
+      --rz-border-weak: rgba(0, 0, 0, 0.1);
+      --rz-text-strong: #181c1f;
+      --rz-text: #333d42;
+      --rz-text-weak: #5c6c74;
+      --rz-link: #0079d3;
+      --rz-link-soft: rgba(0, 121, 211, 0.08);
+      --rz-primary: #181c1f;
+      --rz-primary-ink: #ffffff;
+      --rz-font-sans:
+        'Reddit Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, 'PingFang TC', 'Hiragino Sans',
+        'Microsoft JhengHei', 'Noto Sans TC', 'Noto Sans CJK TC', sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --rz-bg: #0e1113;
+        --rz-surface: #181c1f;
+        --rz-surface-hover: #21272a;
+        --rz-border: rgba(255, 255, 255, 0.2);
+        --rz-border-weak: rgba(255, 255, 255, 0.1);
+        --rz-text-strong: #eef1f3;
+        --rz-text: #b7cad4;
+        --rz-text-weak: #8ba2ad;
+        --rz-link: #4fbcff;
+        --rz-link-soft: rgba(79, 188, 255, 0.12);
+        --rz-primary: #eef1f3;
+        --rz-primary-ink: #0e1113;
+      }
+    }
+    :root[data-theme='light'] {
+      --rz-bg: #ffffff;
+      --rz-surface: #f6f8f9;
+      --rz-surface-hover: #eef1f3;
+      --rz-border: rgba(0, 0, 0, 0.2);
+      --rz-border-weak: rgba(0, 0, 0, 0.1);
+      --rz-text-strong: #181c1f;
+      --rz-text: #333d42;
+      --rz-text-weak: #5c6c74;
+      --rz-link: #0079d3;
+      --rz-link-soft: rgba(0, 121, 211, 0.08);
+      --rz-primary: #181c1f;
+      --rz-primary-ink: #ffffff;
+    }
+    :root[data-theme='dark'] {
+      --rz-bg: #0e1113;
+      --rz-surface: #181c1f;
+      --rz-surface-hover: #21272a;
+      --rz-border: rgba(255, 255, 255, 0.2);
+      --rz-border-weak: rgba(255, 255, 255, 0.1);
+      --rz-text-strong: #eef1f3;
+      --rz-text: #b7cad4;
+      --rz-text-weak: #8ba2ad;
+      --rz-link: #4fbcff;
+      --rz-link-soft: rgba(79, 188, 255, 0.12);
+      --rz-primary: #eef1f3;
+      --rz-primary-ink: #0e1113;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--rz-bg);
+      color: var(--rz-text);
+      font-family: var(--rz-font-sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      margin: 0 auto;
+      padding: 0;
+    }
+    .rz-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 0 24px;
+      overscroll-behavior: contain;
+    }
+    .rz-stickyhead {
+      flex: none;
+      padding: 10px 0;
+      background: var(--rz-bg);
+      border-bottom: 1px solid var(--rz-border-weak);
+    }
+    .rz-stickyhead[hidden] {
+      display: none;
+    }
+    .rz-minihead {
+      margin: 0;
+      font-size: 13px;
+      color: var(--rz-text-weak);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .rz-headrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .rz-headrow .rz-minihead {
+      min-width: 0;
+    }
+    .rz-headsep {
+      flex: none;
+      font-size: 13px;
+      color: var(--rz-text-weak);
+    }
+    .rz-bottombar {
+      flex: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 0;
+    }
+    .rz-moreroom {
+      color: var(--rz-link);
+      font-size: 13px;
+      font-weight: 400;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .rz-moreroom[hidden] {
+      display: none;
+    }
+    .rz-moreroom:hover {
+      text-decoration: underline;
+    }
+    .rz-reader {
+      display: grid;
+      gap: 16px;
+    }
+    .rz-pair {
+      display: grid;
+      gap: 4px;
+    }
+    .rz-zh {
+      margin: 0;
+      font-family: var(--rz-font-sans);
+      font-size: 16px;
+      line-height: 1.75;
+      color: var(--rz-text-strong);
+    }
+    .rz-en {
+      margin: 0;
+      font-family: var(--rz-font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--rz-text);
+    }
+    .rz-attr {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--rz-text-weak);
+    }
+    .rz-head {
+      margin-bottom: 4px;
+    }
+    .rz-work {
+      margin: 0;
+      font-size: 12px;
+      color: var(--rz-text-weak);
+    }
+    .rz-title {
+      margin: 4px 0 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--rz-text-strong);
+    }
+    .rz-title-zh {
+      margin: 2px 0 0;
+      font-family: var(--rz-font-sans);
+      font-size: 17px;
+      color: var(--rz-text-strong);
+    }
+    .rz-lines {
+      display: grid;
+      gap: 14px;
+      margin: 0;
+      border-left: 4px solid var(--rz-border-weak);
+      padding: 0 0 0 16px;
+    }
+    .rz-cite {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: var(--rz-text-weak);
+    }
+    .rz-legal {
+      font-size: 11px;
+      color: var(--rz-text-weak);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rz-commentary {
+      display: grid;
+      gap: 12px;
+    }
+    .rz-commentary-text {
+      margin: 0;
+      font-family: var(--rz-font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--rz-text);
+    }
+    .rz-legal a {
+      color: var(--rz-text-weak);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .rz-legal a:hover {
+      color: var(--rz-text);
+      text-decoration: underline;
+    }
+
+    /* ===== Composer ===== */
+    .rz-compose {
+      display: grid;
+      gap: 20px;
+    }
+    .rz-kicker {
+      margin: 0;
+      font-size: 13px;
+      color: var(--rz-text-weak);
+    }
+    .rz-seg {
+      display: flex;
+      gap: 8px;
+      padding: 4px;
+      border-radius: 999px;
+    }
+    .rz-seg-btn {
+      flex: 1;
+      padding: 8px 16px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--rz-text-weak);
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .rz-seg-btn.is-active {
+      background: var(--rz-surface-hover);
+      color: var(--rz-text-strong);
+      font-weight: 600;
+    }
+    .rz-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--rz-border);
+      border-radius: 16px;
+      background: var(--rz-bg);
+      color: var(--rz-text-strong);
+      font: inherit;
+      font-size: 16px;
+    }
+    .rz-input::placeholder {
+      color: var(--rz-text-weak);
+    }
+    .rz-input:focus-visible {
+      outline: none;
+      border-color: var(--rz-link);
+    }
+    .rz-hint {
+      margin: 16px 4px;
+      font-size: 14px;
+      color: var(--rz-text-weak);
+    }
+    .rz-results {
+      display: grid;
+      gap: 2px;
+      margin-top: 12px;
+    }
+    .rz-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 8px;
+      border: 0;
+      border-bottom: 1px solid var(--rz-border-weak);
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .rz-row:hover {
+      background: var(--rz-surface);
+    }
+    .rz-row-text {
+      display: grid;
+      gap: 2px;
+      flex: 1;
+      min-width: 0;
+    }
+    .rz-row-main {
+      font-size: 15px;
+      color: var(--rz-text-strong);
+    }
+    .rz-row-sub {
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--rz-text-weak);
+    }
+    .rz-chip {
+      flex: none;
+      padding: 2px 8px;
+      border: 1px solid var(--rz-border-weak);
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--rz-text-weak);
+    }
+    .rz-back {
+      justify-self: start;
+      padding: 4px 0;
+      border: 0;
+      background: transparent;
+      color: var(--rz-text-weak);
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .rz-back:hover {
+      color: var(--rz-text-strong);
+    }
+    .rz-picklines {
+      display: grid;
+      gap: 4px;
+    }
+    .rz-pickline {
+      display: grid;
+      gap: 6px;
+      width: 100%;
+      padding: 12px;
+      border: 0;
+      border-left: 2px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .rz-pickline:hover {
+      background: var(--rz-surface);
+    }
+    .rz-pickline .rz-zh,
+    .rz-pickline .rz-en {
+      display: block;
+    }
+    .rz-pickline.is-sel {
+      background: var(--rz-link-soft);
+      border-left-color: var(--rz-link);
+    }
+    .rz-status {
+      margin: -8px 4px 0;
+      font-size: 13px;
+      color: var(--rz-text-weak);
+    }
+    .rz-actionbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .rz-textbtn {
+      padding: 8px 12px;
+      border: 0;
+      background: transparent;
+      color: var(--rz-text-weak);
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .rz-textbtn:hover {
+      color: var(--rz-text-strong);
+    }
+    .rz-pill {
+      padding: 12px 28px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--rz-primary);
+      color: var(--rz-primary-ink);
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .rz-pill:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .rz-ghost {
+      padding: 10px 22px;
+      border: 1px solid var(--rz-border);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--rz-text);
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .rz-ghost:hover {
+      border-color: var(--rz-border);
+      color: var(--rz-text-strong);
+    }
+    .rz-field {
+      display: grid;
+      gap: 8px;
+    }
+    .rz-field-label {
+      font-size: 13px;
+      color: var(--rz-text-weak);
+    }
+    .rz-field-labelrow {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .rz-field-note {
+      font-size: 13px;
+      color: var(--rz-text-weak);
+    }
+    .rz-count {
+      font-size: 13px;
+      color: var(--rz-text-weak);
+    }
+    .rz-count.is-met {
+      color: var(--rz-text);
+      font-weight: 600;
+    }
+    .rz-helper {
+      margin: 0;
+      font-size: 13px;
+      color: var(--rz-text-weak);
+    }
+    .rz-helper[hidden] {
+      display: none;
+    }
+    .rz-preview-box {
+      max-height: 40dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 12px 16px;
+      border: 1px solid var(--rz-border-weak);
+      border-radius: 16px;
+    }
+    .rz-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--rz-border);
+      border-radius: 16px;
+      background: var(--rz-bg);
+      color: var(--rz-text-strong);
+      font-family: var(--rz-font-sans);
+      font-size: 16px;
+      line-height: 1.6;
+      resize: vertical;
+    }
+    .rz-textarea::placeholder {
+      color: var(--rz-text-weak);
+    }
+    .rz-textarea:focus-visible {
+      outline: none;
+      border-color: var(--rz-link);
+    }
+    .rz-error {
+      margin: 0;
+      text-align: center;
+      font-size: 14px;
+      color: var(--rz-text);
+    }
+    .rz-viewpost {
+      color: var(--rz-link);
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .rz-viewpost:hover {
+      text-decoration: underline;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .rz-seg-btn,
+      .rz-row,
+      .rz-pickline,
+      .rz-ghost {
+        transition:
+          background 150ms ease,
+          border-color 150ms ease;
+      }
+    }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script src="reader.js" type="module"></script>
+  </body>
+</html>

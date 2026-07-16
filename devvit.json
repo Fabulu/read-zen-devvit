@@ -1,0 +1,57 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "read-zen",
+  "post": {
+    "entrypoints": {
+      "default": {
+        "entry": "reader.html",
+        "height": "tall"
+      },
+      "reader": {
+        "entry": "reader.html",
+        "height": "tall"
+      }
+    }
+  },
+  "server": {},
+  "permissions": {
+    "http": {
+      "enable": true,
+      "domains": ["raw.githubusercontent.com", "readzen.pages.dev"]
+    },
+    "reddit": {
+      "enable": true,
+      "scope": "user",
+      "asUser": ["SUBMIT_POST", "SUBMIT_COMMENT"]
+    },
+    "redis": true
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "Share a Zen passage",
+        "location": "subreddit",
+        "forUserType": "user",
+        "endpoint": "/internal/on/menu/open-composer"
+      },
+      {
+        "label": "Expand in ReadZen",
+        "location": ["post", "comment"],
+        "forUserType": "user",
+        "endpoint": "/internal/on/menu/expand-link"
+      }
+    ]
+  },
+  "forms": {
+    "expandLink": "/internal/on/form/expand-link",
+    "expandLinkPost": "/internal/on/form/expand-link-post"
+  },
+  "triggers": {
+    "onAppInstall": "/internal/on/app/install",
+    "onPostDelete": "/internal/on/post/delete",
+    "onCommentDelete": "/internal/on/comment/delete"
+  },
+  "scripts": {
+    "dev": "npm run watch"
+  }
+}
